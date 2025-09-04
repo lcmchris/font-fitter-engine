@@ -1,1 +1,1 @@
-BASE_SET = [("a", None), (None, "a")]
+BASE_SET = [("a", "None"), ("b", "None")]
