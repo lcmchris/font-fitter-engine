@@ -1,0 +1,17 @@
+[project]
+name = "font-fitter-engine"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Chris Lai", email = "lcmchristopher@gmail.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+font-fitter-engine = "font_fitter_engine:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
