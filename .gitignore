@@ -214,3 +214,8 @@ __marimo__/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Project specific
+outputs/
+testing_files_fonts/
+testing_files_img/
