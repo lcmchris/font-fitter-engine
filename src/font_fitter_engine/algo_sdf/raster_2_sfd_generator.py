@@ -15,11 +15,19 @@ PIXEL_THRESHOLD_NORMALIZED = 0.5
 DEFAULT_OUT_OF_BOUNDS_VALUE = -1.0
 
 
-class Raster2SDFGenerator(Algo):
-    def __init__(self):
+class Transform:
+    def __init__(self) -> None:
         pass
 
-    def generate_sdf(self, pixel_array):
+    def generate(self, array: np.ndarray):
+        raise NotImplementedError
+
+
+class Raster2SDFGenerator(Transform):
+    def __init__(self):
+        return super().__init__()
+
+    def generate(self, pixel_array):
         binary_mask = self._create_binary_mask(pixel_array)
         inside_distances = self._calculate_inside_distances(binary_mask)
         outside_distances = self._calculate_outside_distances(binary_mask)

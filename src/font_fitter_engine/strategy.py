@@ -1,1 +1,1 @@
-BASE_SET: list[str] = ["a", "b"]
+BASE_SET: list[str] = ["a", "b", "H", "c", "y", "O"]
