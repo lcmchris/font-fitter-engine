@@ -1,3 +1,4 @@
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -214,8 +215,3 @@ __marimo__/
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Project specific
-outputs/
-testing_files_fonts/
-testing_files_img/
