@@ -1,8 +1,34 @@
 """
 SDFGradientAnalyser
-Purpose: Analyzes gradient changes across a measured zone in an SDF array
+Purpose: Find whether the colour of gradiends created by SFDs are even (smooth) or uneven (rough)
 Inputs: SDF array and measured_zone coordinates (x1, y1, x2, y2)
 Outputs: Statistical summary dictionary with gradient metrics
+
+Concetp: 
+When two letters are positioned next to each other, you want even visual density across the spacing zone. But how do you measure "evenness"?
+
+What Gradients Tell:
+- Smooth gradients = Even, gradual density changes = Good spacing
+- Rough gradients = Sudden density jumps = Poor spacing (too close or too far)
+
+Real-World Example
+Imagine the letter "A" next to "V":
+- Good spacing: Smooth transition from A's edge to V's edge
+- Bad spacing: Sharp density jump where they meet (too close) or gap (too far)
+
+Output Values and Their Meaning:
+- mean_gradient: Average change rate across the zone
+    - Low value = Smooth transitions = Good spacing
+    - High value = Rough transitions = Poor spacing
+- gradient_variance: Consistency of transitions
+    - Low variance = Uniform smoothness = Good spacing
+    - High variance = Inconsistent transitions = Poor spacing
+- smoothness_ratio: Percentage of smooth areas
+    - High ratio = Mostly smooth = Good spacing
+    - Low ratio = Mostly rough = Poor spacing
+- consistency_score: Single score (0-100) for optimization
+    - High score = Good spacing
+    - Low score = Poor spacing
 """
 
 import numpy as np
