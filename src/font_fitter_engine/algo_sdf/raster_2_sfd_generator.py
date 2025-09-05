@@ -45,35 +45,3 @@ class Raster2SDFGenerator:
         sdf_array[binary_mask] = inside_distances[binary_mask]
         sdf_array[~binary_mask] = -outside_distances[~binary_mask]
         return sdf_array
-    
-    
-    def get_sdf_at_position(self, sdf_array, x, y):
-        height, width = sdf_array.shape
-        if 0 <= x < width and 0 <= y < height:
-            return sdf_array[y, x]
-        return DEFAULT_OUT_OF_BOUNDS_VALUE
-    
-    def combine_sdf_arrays(self, sdf_array_1, sdf_array_2):
-        return sdf_array_1 + sdf_array_2
-    
-    def calculate_darkness_profile(self, combined_sdf, region_bounds=None):
-        if region_bounds:
-            x1, y1, x2, y2 = region_bounds
-            region = combined_sdf[y1:y2, x1:x2]
-        else:
-            region = combined_sdf
-        
-        positive_values = region[region > 0]
-        if len(positive_values) > 0:
-            return {
-                'mean_darkness': np.mean(positive_values),
-                'variance': np.var(positive_values),
-                'max_darkness': np.max(positive_values),
-                'total_darkness': np.sum(positive_values)
-            }
-        return {
-            'mean_darkness': 0.0,
-            'variance': 0.0,
-            'max_darkness': 0.0,
-            'total_darkness': 0.0
-        }
