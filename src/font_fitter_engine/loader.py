@@ -1,10 +1,12 @@
 from fontTools import ttLib
 from pathlib import Path
-from fontTools.pens import freetypePen, svgPathPen
+from fontTools.pens import freetypePen
 from fontTools.ttLib.tables._c_m_a_p import table__c_m_a_p
 from fontTools.ttLib.tables._h_m_t_x import table__h_m_t_x
 from fontTools.ttLib.tables._g_l_y_f import table__g_l_y_f
-from PIL.Image import Image
+from fontTools.ttLib.tables._v_m_t_x import table__v_m_t_x
+import numpy as np
+from PIL import Image
 
 
 class Loader:
@@ -20,21 +22,37 @@ class Loader:
     def process(self):
         raise NotImplementedError
 
-    def load(self, path: str):
+    def load(self, path: str) -> None:
         raise NotImplementedError
 
     def get_spacing(self) -> dict[str, dict[str, int]]:
         raise NotImplementedError
 
 
-class TTF_Raster_Loader(Loader):
+from dataclasses import dataclass
+
+
+@dataclass
+class GlyphSpacing:
+    xMin: int
+    yMin: int
+    xMax: int
+    yMax: int
+    advance: int
+    lsb: int
+    rsb: int
+    baseline: int
+    tsb: int
+
+
+class TTF_Loader(Loader):
     def __init__(self, glyph_set, save_dir) -> None:
         self.ttf_font = None
         super().__init__(glyph_set=glyph_set, save_dir=save_dir)
 
     def process(
         self,
-    ) -> dict[str, Image]:
+    ) -> dict[str, np.ndarray]:
         if self.ttf_font is None:
             raise ValueError("Not Loaded yet.")
         imgs = self.rasterise(ttfont=self.ttf_font, glyph_set=self.glyph_set)
@@ -50,8 +68,8 @@ class TTF_Raster_Loader(Loader):
         glyph_codes = [ord(i) for i in self.glyph_set]
         cmap: table__c_m_a_p = self.ttf_font.getBestCmap()
         hmtx: table__h_m_t_x = self.ttf_font.get("hmtx", None)
+        vmtx: table__v_m_t_x = self.ttf_font.get("vmtx", None)
         glyf: table__g_l_y_f = self.ttf_font.get("glyf", None)
-
         glyph_spacing = {}
         for glyph_code in glyph_codes:
             glyph_name = cmap[glyph_code]
@@ -81,30 +99,32 @@ class TTF_Raster_Loader(Loader):
             }
         return glyph_spacing
 
-    def load(self, path: str):
+    def load(self, path: str) -> None:
         path_b = Path(path)
         self.ttf_font = ttLib.TTFont(path_b)
 
     @classmethod
-    def save(cls, imgs: dict[str, Image], save_dir: str | None = "outputs/"):
+    def save(cls, imgs: dict[str, np.ndarray], save_dir: str | None = "outputs/"):
         if save_dir is None:
             return
         for glyph, img in imgs.items():
             fmt = "png"
-            img.save(fp=save_dir + f"{glyph}.{fmt}", format=fmt)
+
+            Image.new("RGBA", size=(1000, 1000))
+            Image.fromarray(img).convert("LA").save(
+                fp=save_dir + f"{glyph}.{fmt}", format=fmt
+            )
 
     @classmethod
-    def rasterise(
-        cls, ttfont: ttLib.TTFont, glyph_set, asarray: bool = False
-    ) -> dict[str, Image]:
+    def rasterise(cls, ttfont: ttLib.TTFont, glyph_set) -> dict[str, np.ndarray]:
         images = {}
         full_glyph_set = ttfont.getGlyphSet()
         for glyph in glyph_set:
             pen = freetypePen.FreeTypePen(glyphSet=None)
             full_glyph_set[glyph].draw(pen=pen)
-
-            if asarray:
-                images[glyph] = pen.array()
-            else:
-                images[glyph] = pen.image()
+            images[glyph] = pen.image()
         return images
+
+    @classmethod
+    def normalize(cls, img: np.ndarray):
+        new_canvas = Image.new(mode="RGBA", size=(1000, 1000), color=(255, 255, 255))
