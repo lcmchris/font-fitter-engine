@@ -1,23 +1,19 @@
 from PIL import ImageFilter
 from PIL import Image
 import numpy as np
+from typing import Literal
 
 
 class Algo:
-    def __init__(self, glyph_set: list[tuple[str, str]]) -> None:
+    def __init__(self, glyph_set: list[str]) -> None:
         self.glyph_set = glyph_set
 
-    def calculate(self, *args, **kwargs) -> float:
+    def calculate(
+        self,
+        glyph: str,
+        imgs: dict[str, Image.Image],
+    ) -> float:
         raise NotImplementedError()
-
-    @staticmethod
-    def get_concat_h(im1: Image.Image, im2: Image.Image, gap: int):
-        dst = Image.new(
-            "RGBA", (im1.width + im2.width + gap, im1.height), color=(0, 0, 0)
-        )
-        dst.paste(im1, (0, 0))
-        dst.paste(im2, (im1.width + gap, 0))
-        return dst
 
 
 class BlurAlgo(Algo):
@@ -25,66 +21,34 @@ class BlurAlgo(Algo):
         self.blur_radius = blur_radius
         super().__init__(glyph_set=glyph_set)
 
-    @classmethod
-    def get_dummy_img(
-        cls,
-        height,
-        color: tuple[int, int, int],
-        width=50,
+    def calculate(
+        self,
+        glyph: str,
+        imgs: dict[str, Image.Image],
+        spacing: int,
+        direction: Literal["lsb", "rsb"],
     ):
-        return Image.new("RGBA", size=(width, height), color=color)
+        img = imgs[glyph]
+        new_canvas = Image.new("RGBA", (1000, 1000))
+        # Find center pixel of outer image
+        center_x, center_y = (new_canvas.width // 2), (new_canvas.height // 2)
 
-    @staticmethod
-    def grayscale_to_color(image: Image.Image, new_color=(255, 0, 0)):
-        new_image = Image.new("RGBA", image.size, "WHITE")
-        new_image.paste(image, (0, 0), image)
-        new_image = new_image.convert("RGBA")
+        # Offset inner image to align its center
+        im2_x = center_x - (img.width // 2)
+        im2_y = center_y - (img.height // 2)
+        new_canvas.paste(img, (im2_x, im2_y))
 
-        ##recolor
-        data = np.array(new_image)
-        red, green, blue, alpha = data.T
-        not_white_areas = ~((red == 255) & (blue == 255) & (green == 255))
-        data[..., :-1][not_white_areas.T] = new_color
-        white_areas = (red == 255) & (blue == 255) & (green == 255)
-        data[..., :-1][white_areas.T] = (0, 0, 0)
-        return Image.fromarray(data)
+        combined = new_canvas.filter(ImageFilter.GaussianBlur(radius=self.blur_radius))
 
-    def calculate(self, pair: tuple[str, str], imgs: dict[str, Image.Image], gap: int):
-        left_color = (255, 0, 0)
-        right_color = (0, 0, 255)
-        left, right = pair
-        if left == "None" and right == "None":
-            raise ValueError("Both in glyph set is None!")
+        data = np.array(combined)  # "data" is a height x width x 4 numpy array
 
-        elif left == "None":
-            right_img = imgs[right]
-            right_img = self.grayscale_to_color(right_img, right_color)
-            left_img = self.get_dummy_img(right_img.height, left_color)
+        np.zeros
+        h, w, c = data.shape
+        mid = w // 2
+        split = data[:, mid - (spacing + img.width // 2) : mid, :]
 
-        elif right == "None":
-            left_img = imgs[left]
-            left_img = self.grayscale_to_color(left_img, left_color)
-            right_img = self.get_dummy_img(left_img.height, right_color)
-
-        else:
-            left_img = self.grayscale_to_color(imgs[left], left_color)
-            right_img = self.grayscale_to_color(imgs[right], right_color)
-
-        combined = self.get_concat_h(left_img, right_img, gap)
-
-        combined = combined.filter(ImageFilter.GaussianBlur(radius=self.blur_radius))
-
-        return self.calc_metric(combined, pair)
-
-    @staticmethod
-    def calc_metric(im: Image.Image, pair) -> int:
-        data = np.array(im)  # "data" is a height x width x 4 numpy array
-        red, green, blue, alpha = data.T  # Temporarily unpack the bands for readability
-
-        violet_areas = (red > 0) & (blue > 0)
-
-        data[..., :-1][violet_areas.T] = (255, 255, 255)
-
-        Image.fromarray(data).save(f"outputs/{pair[0]}_{pair[1]}_overlap.png")
-
-        return violet_areas.sum().item()
+        # split[..., :-1][dark_areas.T] = (0, 0)
+        Image.fromarray(split).save(
+            f"outputs/split_blurr_{glyph}.png",
+        )
+        return split.sum().item()

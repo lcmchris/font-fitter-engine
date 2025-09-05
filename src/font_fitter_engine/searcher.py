@@ -5,12 +5,12 @@ from font_fitter_engine.algo import Algo
 class Searcher:
     """How do we search?"""
 
-    def __init__(self, glyph_set: list[tuple[str, str]], algo: Algo) -> None:
+    def __init__(self, glyph_set: list[str], algo: Algo) -> None:
         self.glyph_set = glyph_set
         self.algo = algo
         pass
 
-    def search(self, output) -> dict[tuple[str, str], int]:
+    def search(self, output) -> dict[str, int]:
         raise NotImplementedError
 
 
@@ -35,14 +35,14 @@ class BinomialSearcher(Searcher):
     def search(self, output):
         """create search plan"""
         final_result = {}
-        for pair in self.glyph_set:
+        for glyph in self.glyph_set:
             idx = 0
             calc_val = -100
             max_g = self.max_gap
             min_g = self.min_gap
 
-            max_val = calc_val = self.algo.calculate(pair, output, max_g)
-            min_val = calc_val = self.algo.calculate(pair, output, min_g)
+            max_val = calc_val = self.algo.calculate(glyph, output, max_g)
+            min_val = calc_val = self.algo.calculate(glyph, output, min_g)
             direction = 1 if max_val - min_val > 0 else -1
             while True:
                 idx += 1
@@ -58,7 +58,7 @@ class BinomialSearcher(Searcher):
                 ):
                     break
 
-                calc_val = self.algo.calculate(pair, output, mid)
+                calc_val = self.algo.calculate(glyph, output, mid)
 
                 if calc_val > self.target + self.boundary:
                     if direction:
@@ -71,5 +71,5 @@ class BinomialSearcher(Searcher):
                     else:
                         min_g = mid
 
-            final_result[pair] = mid
+            final_result[glyph] = mid
         return final_result

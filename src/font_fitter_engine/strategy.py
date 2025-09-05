@@ -1,1 +1,1 @@
-BASE_SET = [("a", "None"), ("b", "None")]
+BASE_SET: list[str] = ["a", "b"]
