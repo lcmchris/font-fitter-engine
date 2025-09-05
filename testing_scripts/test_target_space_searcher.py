@@ -15,7 +15,7 @@ from src.font_fitter_engine.algo_sdf.sdf_target_space_searcher import SFDTargetS
 
 TESTING_FILES_DIR = "testing_files_img"
 OUTPUTS_DIR = "outputs/search_repots/"
-TARGET_DENSITIES = [200000, 300000, 800000, 900000]
+TARGET_DENSITIES = [200000, 300000, 800000, 900000, 9000000]
 DEFAULT_STEP_SIZE = 2
 
 def load_image_as_array(image_path):

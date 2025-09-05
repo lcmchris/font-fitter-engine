@@ -5,14 +5,15 @@ Purpose: Test visual density calculation with different areas on SDF data
 
 import sys
 import os
+import csv
 import numpy as np
 import cv2
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src.font_fitter_engine.algo_sdf.raster_2_sfd_generator import Raster2SDFGenerator
 from src.font_fitter_engine.algo_sdf.sdf_visual_density_calculator import SDFVisualDensityCalculator
 
-TEST_IMAGE_PATH = "testing_files_img/test-s-512.png"
-OUTPUT_CSV_PATH = "outputs/test-s-512-sdf.csv"
+INPUT_DIR = "testing_files_img"
+OUTPUT_DIR = "outputs/visual_density_reports/"
 
 def load_image_as_array(image_path):
     image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -20,9 +21,29 @@ def load_image_as_array(image_path):
         raise ValueError(f"Could not load image: {image_path}")
     return image
 
-def test_density_calculations():
-    print("Loading test image...")
-    pixel_array = load_image_as_array(TEST_IMAGE_PATH)
+def ensure_output_directory():
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+def save_results_to_csv(filename, results):
+    csv_path = os.path.join(OUTPUT_DIR, f"{os.path.splitext(filename)[0]}_density_report.csv")
+    
+    with open(csv_path, 'w', newline='') as csvfile:
+        fieldnames = ['area_name', 'coordinates', 'area_size', 'total_density', 'avg_density']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        for result in results:
+            writer.writerow(result)
+    
+    print(f"Results saved to: {csv_path}")
+    return csv_path
+
+def process_single_image(image_path):
+    filename = os.path.basename(image_path)
+    print(f"\nProcessing: {filename}")
+    print("=" * 50)
+    
+    pixel_array = load_image_as_array(image_path)
     print(f"Image shape: {pixel_array.shape}")
     
     print("Generating SDF...")
@@ -50,6 +71,7 @@ def test_density_calculations():
     print("\nDensity calculations:")
     print("-" * 60)
     
+    results = []
     for area_name, (x1, y1, x2, y2) in test_areas:
         density = density_calculator.calculate_density(sdf_array, (x1, y1, x2, y2))
         area_size = (x2 - x1) * (y2 - y1)
@@ -57,6 +79,14 @@ def test_density_calculations():
         
         print(f"{area_name:25} | Area: {x1:3},{y1:3},{x2:3},{y2:3} | "
               f"Size: {area_size:6} | Total: {density:10.2f} | Avg: {avg_density:8.4f}")
+        
+        results.append({
+            'area_name': area_name,
+            'coordinates': f"{x1},{y1},{x2},{y2}",
+            'area_size': area_size,
+            'total_density': density,
+            'avg_density': avg_density
+        })
     
     print("\nTesting with different zone sizes (center area):")
     print("-" * 60)
@@ -74,9 +104,52 @@ def test_density_calculations():
         
         print(f"Center {size:3}x{size:3} | Area: {x1:3},{y1:3},{x2:3},{y2:3} | "
               f"Size: {area_size:6} | Total: {density:10.2f} | Avg: {avg_density:8.4f}")
+        
+        results.append({
+            'area_name': f"Center {size}x{size}",
+            'coordinates': f"{x1},{y1},{x2},{y2}",
+            'area_size': area_size,
+            'total_density': density,
+            'avg_density': avg_density
+        })
+    
+    csv_path = save_results_to_csv(filename, results)
+    return results, csv_path
+
+def process_directory():
+    ensure_output_directory()
+    
+    if not os.path.exists(INPUT_DIR):
+        raise ValueError(f"Input directory does not exist: {INPUT_DIR}")
+    
+    png_files = [f for f in os.listdir(INPUT_DIR) if f.lower().endswith('.png')]
+    
+    if not png_files:
+        print(f"No PNG files found in {INPUT_DIR}")
+        return
+    
+    print(f"Found {len(png_files)} PNG files to process")
+    
+    all_results = {}
+    
+    csv_files_created = []
+    
+    for png_file in sorted(png_files):
+        image_path = os.path.join(INPUT_DIR, png_file)
+        try:
+            results, csv_path = process_single_image(image_path)
+            all_results[png_file] = results
+            csv_files_created.append(csv_path)
+        except Exception as e:
+            print(f"Error processing {png_file}: {e}")
+            continue
+    
+    print(f"\nProcessed {len(all_results)} files successfully")
+    print(f"Created {len(csv_files_created)} CSV report files in {OUTPUT_DIR}")
+    return all_results, csv_files_created
 
 def main():
-    test_density_calculations()
+    process_directory()
     print("\nTest completed successfully!")
 
 if __name__ == "__main__":
