@@ -5,8 +5,6 @@ Inputs: sdf_array, center_x, height, target_density, step_size, max_width
 Outputs: optimal_area_left, optimal_area_right, left_density_diff, right_density_diff
 """
 
-import numpy as np
-
 DEFAULT_STEP_SIZE = 2
 
 

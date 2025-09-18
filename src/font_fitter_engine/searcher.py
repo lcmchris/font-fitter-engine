@@ -13,8 +13,6 @@ class Searcher:
         self.glyph_set = glyph_set
         self.algos = algos
         self.transform = transform
-        TESTING_FILES_DIR = "testing_files_img"
-        OUTPUTS_DIR = "outputs/search_repots/"
         pass
 
     def search(self, img_out) -> dict[str, int]:

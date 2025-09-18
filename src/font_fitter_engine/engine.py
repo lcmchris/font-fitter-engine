@@ -1,14 +1,5 @@
-from font_fitter_engine.algo import Algo
-from font_fitter_engine.algo_gaussian_blur.gaussain_blur import BlurAlgo
-from font_fitter_engine.algo_sdf.sdf_visual_density_calculator import (
-    SDFVisualDensityAlgo,
-    SDFVisualAreaAlgo,
-)
-from font_fitter_engine.algo_sdf.raster_2_sfd_generator import Raster2SDFGenerator
-from font_fitter_engine.loader import Loader, TTF_Loader
-from font_fitter_engine.searcher import Searcher, BinomialSearcher, StepSearcher
-from typing import Literal
-from font_fitter_engine.strategy import BASE_SET
+from font_fitter_engine.loader import Loader
+from font_fitter_engine.searcher import Searcher
 from pathlib import Path
 
 
@@ -26,10 +17,12 @@ class SpacingEngine:
         if not path_b.is_dir():
             raise NotImplementedError("Path should be a directory")
         for file in path_b.iterdir():
+            print(f"Processing file {file}")
             self.loader.load(path=file)
             img_out = self.loader.process()
             calculated_spaces = self.searcher.search(img_out=img_out)
             print(calculated_spaces)
+        print("Run complete")
 
     def validate(self, path: str):
         """
@@ -46,7 +39,7 @@ class SpacingEngine:
             img_out = self.loader.process()
             spacing = self.loader.get_spacing()
 
-            for glyph in loader.glyph_set:
+            for glyph in self.loader.glyph_set:
                 img = img_out[glyph].array
                 height, width, c = img.shape
                 glyph_spacing = spacing[glyph]
@@ -77,36 +70,4 @@ class SpacingEngine:
                     validation_dict[filename][algo][glyph]["lsb"] = lsb
 
         print(validation_dict)
-
-
-if __name__ == "__main__":
-    loader = TTF_Loader(
-        glyph_set=[
-            "a",
-            "b",
-            "c",
-            "d",
-            "t",
-            "l",
-            "i",
-            "o",
-            "v",
-            "y",
-            "x",
-            "H",
-            "M",
-            "A",
-            "B",
-            "Y",
-            "T",
-        ],
-        save_dir="outputs/",
-    )
-    # algo = BlurAlgo(blur_radius=20)
-    algos = [SDFVisualDensityAlgo(), SDFVisualAreaAlgo()]
-    searcher = StepSearcher(
-        algos=algos, glyph_set=BASE_SET, step_size=2, transform=Raster2SDFGenerator()
-    )
-    engine = SpacingEngine(loader=loader, searcher=searcher)
-    # engine.run("/home/chrisl/.repo/font-fitter-engine/testing_files/")
-    engine.validate("/home/chrisl/.repo/font-fitter-engine/testing_files_fonts/")
+        print("Validation complete")
